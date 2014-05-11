@@ -5,17 +5,36 @@ package requestid
 import (
 	"net/http"
 
+	"code.google.com/p/go-uuid/uuid"
 	"github.com/go-martini/martini"
 )
 
+const header = "X-Request-Id"
+
+// Our custom type to map the context to.
 type RequestId string
 
+// Options for the middleware.
+type Options struct {
+	Generate bool
+}
+
 // A middleware to extract the request id.
-func Middleware() martini.Handler {
+func Middleware(options *Options) martini.Handler {
 	return func(c martini.Context, req *http.Request) {
-		requestId := req.Header.Get("X-Request-Id")
+		requestId := req.Header.Get(header)
+
+		if requestId == "" && options.Generate {
+			uuid := generateRequestId()
+			req.Header.Set(header, uuid)
+			requestId = uuid
+		}
 
 		c.Map(RequestId(requestId))
 		c.Next()
 	}
+}
+
+func generateRequestId() string {
+	return uuid.NewUUID().String()
 }

@@ -8,17 +8,29 @@ import (
 	"github.com/go-martini/martini"
 )
 
-func Test_RequestId_Middleware(t *testing.T) {
-	recorder := httptest.NewRecorder()
-	m := martini.Classic()
-	m.Use(Middleware())
-	m.Get("/", func(requestId RequestId) {
-		if requestId != RequestId("1234") {
-			t.Fatal("Expected the request id")
-		}
-	})
+var (
+	extractTests = []struct {
+		Options  *Options
+		Header   string
+		Expected RequestId
+	}{
+		{&Options{}, "1234", "1234"},
+		{&Options{Generate: false}, "", ""},
+	}
+)
 
-	r, _ := http.NewRequest("GET", "/", nil)
-	r.Header.Set("X-Request-Id", "1234")
-	m.ServeHTTP(recorder, r)
+func Test_Extract(t *testing.T) {
+	for _, test := range extractTests {
+		recorder := httptest.NewRecorder()
+		m := martini.Classic()
+		m.Use(Middleware(test.Options))
+		m.Get("/", func(requestId RequestId) {
+			if requestId != test.Expected {
+				t.Fatalf("Expected %v, got %v", test.Expected, requestId)
+			}
+		})
+		r, _ := http.NewRequest("GET", "/", nil)
+		r.Header.Set("X-Request-Id", test.Header)
+		m.ServeHTTP(recorder, r)
+	}
 }
