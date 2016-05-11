@@ -5,8 +5,8 @@ package requestid
 import (
 	"net/http"
 
-	"code.google.com/p/go-uuid/uuid"
 	"github.com/go-martini/martini"
+	"github.com/pborman/uuid"
 )
 
 const header = "X-Request-Id"
